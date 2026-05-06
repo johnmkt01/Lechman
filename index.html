@@ -1,0 +1,3137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lechman Reefer Service — Controle de Estoque</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d10;
+    --surface: #10151c;
+    --surface2: #161d27;
+    --border: #1e2a38;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #00e676;
+    --red: #ff3d57;
+    --yellow: #ffd740;
+    --text: #e8edf2;
+    --text2: #7a8fa6;
+    --text3: #3d5068;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-text { display: flex; flex-direction: column; line-height: 1; }
+  .logo-main { font-size: 28px; letter-spacing: 4px; color: var(--accent2); }
+  .logo-sub { font-size: 10px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 3px; color: var(--text2); font-weight: 400; text-transform: uppercase; margin-top: 1px; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 14px 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .user-badge:hover { border-color: var(--accent); }
+
+  .user-avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), #0080ff);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px; color: #000;
+  }
+
+  .user-info { line-height: 1.2; }
+  .user-name { font-size: 13px; font-weight: 600; }
+  .user-role { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ─── LAYOUT ─── */
+  .app-layout { display: flex; flex: 1; }
+
+  /* ─── SIDEBAR ─── */
+  nav {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+  }
+
+  .nav-section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 20px 4px;
+    margin-top: 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 20px;
+    cursor: pointer;
+    transition: all .15s;
+    font-size: 13.5px;
+    color: var(--text2);
+    border-left: 3px solid transparent;
+    font-weight: 500;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+
+  .nav-item.active {
+    background: rgba(0, 212, 255, .08);
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* ─── MAIN CONTENT ─── */
+  main {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+    max-height: calc(100vh - 64px);
+  }
+
+  /* ─── TABS ─── */
+  .tab { display: none; }
+  .tab.active { display: block; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 4px;
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+    font-family: 'IBM Plex Sans', sans-serif;
+    letter-spacing: .3px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #33ddff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,255,.3); }
+
+  .btn-success {
+    background: var(--green);
+    color: #000;
+  }
+  .btn-success:hover { background: #33eb8e; transform: translateY(-1px); }
+
+  .btn-danger {
+    background: var(--red);
+    color: #fff;
+  }
+  .btn-danger:hover { background: #ff6b7a; }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-ghost { background: transparent; color: var(--text2); border: none; padding: 6px 10px; }
+  .btn-ghost:hover { color: var(--accent); }
+
+  /* ─── STATS CARDS ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card.blue::before { background: var(--accent); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.yellow::before { background: var(--yellow); }
+
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .stat-card.blue .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.red .stat-value { color: var(--red); }
+  .stat-card.yellow .stat-value { color: var(--yellow); }
+
+  .stat-sub { font-size: 11px; color: var(--text2); margin-top: 6px; }
+
+  /* ─── TABLE ─── */
+  .table-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-toolbar-left { display: flex; align-items: center; gap: 10px; }
+  .table-toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    width: 240px;
+    transition: border-color .2s;
+  }
+
+  .search-box:focus-within { border-color: var(--accent); }
+
+  .search-box input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    width: 100%;
+  }
+
+  .search-box input::placeholder { color: var(--text3); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    padding: 12px 20px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  tbody td {
+    padding: 13px 20px;
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .badge-in { background: rgba(0,230,118,.12); color: var(--green); }
+  .badge-out { background: rgba(255,61,87,.12); color: var(--red); }
+  .badge-ok { background: rgba(0,212,255,.12); color: var(--accent); }
+  .badge-low { background: rgba(255,215,64,.12); color: var(--yellow); }
+  .badge-critical { background: rgba(255,61,87,.12); color: var(--red); }
+  .badge-admin { background: rgba(255,107,53,.12); color: var(--accent2); }
+  .badge-op { background: rgba(0,212,255,.12); color: var(--accent); }
+
+  /* ─── CODE MONO ─── */
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* ─── FORMS ─── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .form-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .form-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.span-2 { grid-column: span 2; }
+  .form-group.span-3 { grid-column: span 3; }
+
+  label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .form-card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 560px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn .2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; }
+  .modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 20px; padding: 4px; }
+  .modal-close:hover { color: var(--red); }
+
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+  /* ─── TABS INSIDE PAGE ─── */
+  .inner-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inner-tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .15s;
+  }
+
+  .inner-tab:hover { color: var(--text); }
+  .inner-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ─── PEDIDO LIST ─── */
+  .pedido-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .pedido-item-name { flex: 1; font-weight: 500; font-size: 13px; }
+  .pedido-item-code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text2); }
+
+  .qty-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .qty-btn {
+    background: var(--surface);
+    border: none;
+    color: var(--text2);
+    width: 32px; height: 32px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .1s;
+  }
+
+  .qty-btn:hover { background: var(--border); color: var(--text); }
+
+  .qty-display {
+    width: 48px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: var(--bg);
+    border: none;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    color: var(--text);
+    height: 32px;
+    outline: none;
+  }
+
+  /* ─── PRINT ─── */
+  @media print {
+    header, nav, .no-print { display: none !important; }
+    body { background: white; color: black; }
+    .print-area { display: block !important; }
+    .app-layout { display: block; }
+    main { padding: 0; max-height: none; }
+    #tab-lista { display: block !important; }
+    .print-doc { background: white; border: none; }
+  }
+
+  /* ─── TOAST ─── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn .2s ease;
+    border-left: 3px solid var(--green);
+    min-width: 240px;
+  }
+
+  .toast.error { border-left-color: var(--red); }
+  .toast.warning { border-left-color: var(--yellow); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+  }
+
+  .empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: .5; }
+  .empty-state-text { font-size: 14px; }
+
+  /* ─── STOCK INDICATOR ─── */
+  .stock-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 80px;
+    margin-top: 4px;
+  }
+
+  .stock-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .3s;
+  }
+
+  /* ─── SEPARATOR ─── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* ─── USER CARDS ─── */
+  .user-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: border-color .2s;
+  }
+  .user-card:hover { border-color: var(--accent); }
+
+  .user-card-avatar {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: #000;
+    flex-shrink: 0;
+  }
+
+  .user-card-info { flex: 1; }
+  .user-card-name { font-weight: 600; font-size: 14px; }
+  .user-card-email { font-size: 11px; color: var(--text2); font-family: 'IBM Plex Mono', monospace; }
+  .user-card-actions { display: flex; gap: 8px; }
+
+  /* ─── ALERT ─── */
+  .alert {
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    border: 1px solid;
+  }
+
+  .alert-info { background: rgba(0,212,255,.07); border-color: rgba(0,212,255,.2); color: var(--accent); }
+  .alert-warning { background: rgba(255,215,64,.07); border-color: rgba(255,215,64,.2); color: var(--yellow); }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text { font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+
+  .print-header { display: none; }
+
+  /* ─── SAÍDA AUTOCOMPLETE ─── */
+  .saida-option {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .saida-option:last-child { border-bottom: none; }
+  .saida-option:hover { background: var(--border); }
+  .saida-option-code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); }
+  .saida-option-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .saida-option-badge.reg { background: rgba(0,212,255,.12); color: var(--accent); }
+  .saida-option-badge.rec { background: rgba(255,107,53,.12); color: var(--accent2); }
+</style>
+
+  <!-- ══════════════ LOGIN OVERLAY STYLES ══════════════ -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+  /* ─── LOGIN OVERLAY ─── */
+  #loginOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d0d1a;
+    font-family: 'Poppins', sans-serif;
+    transition: opacity .5s ease;
+  }
+  #loginOverlay.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #loginOverlay .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: .25;
+    pointer-events: none;
+  }
+  #loginOverlay .orb1 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #7c3aed, transparent);
+    top: -100px; left: -100px;
+    animation: orbFloat1 8s ease-in-out infinite;
+  }
+  #loginOverlay .orb2 {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, #2563eb, transparent);
+    bottom: -80px; right: -80px;
+    animation: orbFloat2 10s ease-in-out infinite;
+  }
+  @keyframes orbFloat1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,20px) scale(1.05)} }
+  @keyframes orbFloat2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-20px,30px) scale(1.08)} }
+
+  #loginOverlay .card {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 24px;
+    padding: 48px 44px;
+    width: 100%;
+    max-width: 420px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 32px 64px rgba(0,0,0,.5);
+    position: relative;
+    z-index: 1;
+  }
+
+  #loginOverlay .screen {
+    animation: screenIn .35s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  #loginOverlay .screen.hidden { display: none; }
+
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateY(16px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  #loginOverlay h2 {
+    font-family: 'IBM Plex Mono', 'Poppins', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  #loginOverlay .subtitle {
+    color: rgba(255,255,255,.45);
+    font-size: 13px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  #loginOverlay .logo-login {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  #loginOverlay .logo-login-text { line-height: 1; }
+  #loginOverlay .logo-login-main {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #ff6b35;
+  }
+  #loginOverlay .logo-login-sub {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,.4);
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  #loginOverlay .input-group {
+    position: relative;
+    margin-bottom: 18px;
+  }
+
+  #loginOverlay .input-group i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,.3);
+    font-size: 14px;
+    z-index: 1;
+    transition: color .2s;
+  }
+
+  #loginOverlay .input-group input {
+    width: 100%;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    padding: 16px 16px 16px 44px;
+    color: #fff;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
+    transition: border-color .2s, background .2s;
+  }
+
+  #loginOverlay .input-group input:focus {
+    border-color: rgba(124,58,237,.6);
+    background: rgba(255,255,255,.09);
+  }
+  #loginOverlay .input-group input:focus + label,
+  #loginOverlay .input-group input:not(:placeholder-shown) + label {
+    top: -10px;
+    font-size: 10px;
+    color: #a78bfa;
+    background: #0d0d1a;
+    padding: 0 6px;
+    border-radius: 4px;
+  }
+  #loginOverlay .input-group input:focus ~ i { color: #a78bfa; }
+
+  #loginOverlay .input-group label {
+    position: absolute;
+    left: 44px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,.35);
+    font-size: 13px;
+    pointer-events: none;
+    transition: all .2s;
+  }
+
+  #loginOverlay .btn-login {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .5px;
+    margin-top: 8px;
+  }
+  #loginOverlay .btn-login:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(124,58,237,.4);
+  }
+  #loginOverlay .btn-login:disabled { opacity: .7; cursor: default; }
+
+  #loginOverlay .error-msg {
+    background: rgba(255,61,87,.1);
+    border: 1px solid rgba(255,61,87,.3);
+    color: #ff6b7a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  #loginOverlay .error-msg.show { display: block; }
+
+  #loginOverlay .bottom-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    font-size: 12px;
+    color: rgba(255,255,255,.35);
+  }
+  #loginOverlay .bottom-links a, #loginOverlay .link-btn {
+    color: #a78bfa;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Poppins', sans-serif;
+    padding: 0;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  #loginOverlay .bottom-links a:hover, #loginOverlay .link-btn:hover { color: #c4b5fd; }
+
+  #loginOverlay .success-box {
+    text-align: center;
+    padding: 12px 0;
+  }
+  #loginOverlay .success-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 26px;
+    color: white;
+  }
+  #loginOverlay .success-box h3 { color: #fff; font-size: 20px; margin-bottom: 10px; }
+  #loginOverlay .success-box p { color: rgba(255,255,255,.5); font-size: 13px; line-height: 1.6; }
+
+  #loginOverlay .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,61,87,.1);
+    border: 1px solid rgba(255,61,87,.25);
+    color: #ff6b7a;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: all .2s;
+  }
+  #loginOverlay .logout-btn:hover { background: rgba(255,61,87,.2); }
+  </style>
+
+</head>
+<body>
+
+<!-- ══════════════ LOGIN OVERLAY ══════════════ -->
+<div id="loginOverlay">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+
+  <div class="card">
+
+    <!-- TELA 1: LOGIN -->
+    <div class="screen" id="loginScreen">
+      <div class="logo-login">
+        <span style="font-size:30px;">❄️</span>
+        <div class="logo-login-text">
+          <div class="logo-login-main">LECHMAN</div>
+          <div class="logo-login-sub">Reefer Service</div>
+        </div>
+      </div>
+      <h2>LOGIN</h2>
+      <p class="subtitle">Acesse o sistema de controle de estoque.</p>
+      <div class="error-msg" id="loginError">Usuário ou senha incorretos.</div>
+      <div class="input-group">
+        <i class="fas fa-user"></i>
+        <input type="text" id="loginUsername" placeholder=" " autocomplete="username">
+        <label>Usuário / E-mail</label>
+      </div>
+      <div class="input-group">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="loginPassword" placeholder=" " autocomplete="current-password">
+        <label>Senha</label>
+      </div>
+      <button class="btn-login" id="loginBtn" onclick="doLogin()">Entrar</button>
+      <div class="bottom-links">
+        <span></span>
+        <button type="button" class="link-btn" onclick="showLoginScreen('forgotScreen')">Esqueci minha senha?</button>
+      </div>
+    </div>
+
+    <!-- TELA 2: RECUPERAR SENHA -->
+    <div class="screen hidden" id="forgotScreen">
+      <div class="logo-login">
+        <span style="font-size:30px;">❄️</span>
+        <div class="logo-login-text">
+          <div class="logo-login-main">LECHMAN</div>
+          <div class="logo-login-sub">Reefer Service</div>
+        </div>
+      </div>
+      <h2>RECUPERAR</h2>
+      <p class="subtitle">Digite seu e-mail e enviaremos um link para redefinir sua senha.</p>
+      <div class="error-msg" id="forgotError">Digite um e-mail válido.</div>
+      <div class="input-group">
+        <i class="fas fa-envelope"></i>
+        <input type="email" id="forgotEmail" placeholder=" ">
+        <label>E-mail</label>
+      </div>
+      <button class="btn-login" id="forgotBtn" onclick="doForgot()">Enviar Link</button>
+      <div class="bottom-links" style="justify-content:center; margin-top:20px;">
+        <button type="button" class="link-btn" onclick="showLoginScreen('loginScreen')">
+          <i class="fas fa-arrow-left" style="font-size:10px; margin-right:4px;"></i> Voltar ao login
+        </button>
+      </div>
+    </div>
+
+    <!-- TELA 3: SUCESSO -->
+    <div class="screen hidden" id="successScreen">
+      <div class="success-box">
+        <div class="success-icon"><i class="fas fa-check"></i></div>
+        <h3>E-mail enviado!</h3>
+        <p>Verifique sua caixa de entrada.<br>O link expira em <strong style="color:#a78bfa;">15 minutos</strong>.</p>
+        <button class="btn-login" style="margin-top:24px" onclick="showLoginScreen('loginScreen')">Voltar ao Login</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ══════════════ FIM LOGIN OVERLAY ══════════════ -->
+
+
+
+<!-- ─── TOAST ─── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ─── HEADER ─── -->
+<header>
+  <div class="logo">
+    <span style="font-size:28px;">❄️</span>
+    <div class="logo-text">
+      <span class="logo-main">LECHMAN</span>
+      <span class="logo-sub">Reefer Service</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="user-badge" onclick="showTab('usuarios')">
+      <div class="user-avatar" id="headerAvatar">AD</div>
+      <div class="user-info">
+        <div class="user-name" id="headerUserName">Administrador</div>
+        <div class="user-role" id="headerUserRole">Admin</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="app-layout">
+  <!-- ─── SIDEBAR ─── -->
+  <nav>
+    <div class="nav-section-label">Principal</div>
+    <div class="nav-item active" onclick="showTab('dashboard')">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+
+    <div class="nav-section-label">Estoque</div>
+    <div class="nav-item" onclick="showTab('pecas')">
+      <span class="nav-icon">🔩</span> Peças
+    </div>
+    <div class="nav-item" onclick="showTab('entrada')">
+      <span class="nav-icon">📥</span> Entrada
+    </div>
+    <div class="nav-item" onclick="showTab('saida')">
+      <span class="nav-icon">📤</span> Saída
+    </div>
+    <div class="nav-item" onclick="showTab('historico')">
+      <span class="nav-icon">📋</span> Histórico
+    </div>
+
+    <div class="nav-section-label">Operações</div>
+    <div class="nav-item" onclick="showTab('lista')">
+      <span class="nav-icon">🛒</span> Lista de Pedido
+    </div>
+    <div class="nav-item" onclick="showTab('notas')">
+      <span class="nav-icon">🧾</span> Notas Fiscais
+    </div>
+
+    <div class="nav-section-label">Recondicionadas</div>
+    <div class="nav-item" onclick="showTab('recondicionadas')">
+      <span class="nav-icon">♻️</span> Estoque Recon.
+    </div>
+
+    <div class="nav-section-label">Sistema</div>
+    <div class="nav-item" onclick="showTab('usuarios')">
+      <span class="nav-icon">👤</span> Usuários
+    </div>
+  </nav>
+
+  <!-- ─── MAIN ─── -->
+  <main>
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div id="tab-dashboard" class="tab active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">DASHBOARD</div>
+          <div class="page-subtitle">VISÃO GERAL DO ESTOQUE — REEFER PARTS</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-success" onclick="showTab('entrada')">📥 Nova Entrada</button>
+          <button class="btn btn-danger" onclick="showTab('saida')">📤 Nova Saída</button>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card blue">
+          <div class="stat-label">Total de Itens</div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-sub">peças cadastradas</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Entradas (mês)</div>
+          <div class="stat-value" id="statEntradas">0</div>
+          <div class="stat-sub">unidades recebidas</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Saídas (mês)</div>
+          <div class="stat-value" id="statSaidas">0</div>
+          <div class="stat-sub">unidades utilizadas</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Estoque Baixo</div>
+          <div class="stat-value" id="statBaixo">0</div>
+          <div class="stat-sub">itens com alerta</div>
+        </div>
+      </div>
+
+      <!-- Alertas de estoque baixo -->
+      <div id="alertasBaixo" style="margin-bottom:20px;"></div>
+
+      <!-- Últimas movimentações -->
+      <div class="table-container">
+        <div class="table-toolbar">
+          <div class="table-toolbar-left">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;">Últimas Movimentações</span>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="showTab('historico')">Ver Tudo →</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Tipo</th>
+              <th>Peça</th>
+              <th>Código</th>
+              <th>Qtd</th>
+              <th>Usuário</th>
+              <th>Obs</th>
+            </tr>
+          </thead>
+          <tbody id="dashHistorico">
+            <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhuma movimentação ainda</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ PEÇAS ═══ -->
+    <div id="tab-pecas" class="tab">
+      <div class="page-header">
+        <div>
+          <div class="page-title">CADASTRO DE PEÇAS</div>
+          <div class="page-subtitle">GERENCIAR PEÇAS DE CONTÊINER REEFER</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModalPeca()">+ Nova Peça</button>
+      </div>
+
+      <div class="table-container">
+        <div class="table-toolbar">
+          <div class="table-toolbar-left">
+            <div class="search-box">
+              <span>🔍</span>
+              <input type="text" placeholder="Buscar peça, código..." id="searchPecas" oninput="renderPecas()">
+            </div>
+            <select style="width:180px;padding:8px 12px;font-size:13px;" id="filterCategoria" onchange="renderPecas()">
+              <option value="">Todas as categorias</option>
+              <option>Compressor</option>
+              <option>Evaporador</option>
+              <option>Condensador</option>
+              <option>Elétrica</option>
+              <option>Filtro/Secador</option>
+              <option>Estrutura</option>
+              <option>Outros</option>
+            </select>
+          </div>
+          <div class="table-toolbar-right">
+            <span id="pecasCount" style="font-size:12px;color:var(--text2);">0 peças</span>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Unid.</th>
+              <th>Estoque Atual</th>
+              <th>Estoque Mín.</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tablePecas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ ENTRADA ═══ -->
+    <div id="tab-entrada" class="tab">
+      <div class="page-header">
+        <div>
+          <div class="page-title">ENTRADA DE PEÇAS</div>
+          <div class="page-subtitle">REGISTRAR RECEBIMENTO DE ITENS NO ESTOQUE</div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-title">📥 Dados da Entrada</div>
+        <div class="form-grid" style="margin-bottom:16px;">
+          <div class="form-group">
+            <label>Peça *</label>
+            <select id="entradaPeca" onchange="updateEntradaInfo()">
+              <option value="">Selecionar peça...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Quantidade *</label>
+            <input type="number" id="entradaQtd" min="1" value="1" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Fornecedor</label>
+            <input type="text" id="entradaFornecedor" placeholder="Nome do fornecedor">
+          </div>
+          <div class="form-group">
+            <label>Nota Fiscal / Doc.</label>
+            <input type="text" id="entradaNF" placeholder="NF-000000">
+          </div>
+          <div class="form-group">
+            <label>Data de Recebimento</label>
+            <input type="date" id="entradaData">
+          </div>
+          <div class="form-group">
+            <label>Usuário Responsável</label>
+            <input type="text" id="entradaUsuario" readonly style="opacity:.7;">
+          </div>
+          <div class="form-group span-3">
+            <label>Observações</label>
+            <textarea id="entradaObs" rows="2" placeholder="Observações adicionais..."></textarea>
+          </div>
+        </div>
+        <div id="entradaInfo" style="display:none;margin-bottom:16px;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button class="btn btn-outline" onclick="limparEntrada()">Limpar</button>
+          <button class="btn btn-success" onclick="registrarEntrada()">✓ Registrar Entrada</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SAÍDA ═══ -->
+    <div id="tab-saida" class="tab">
+      <div class="page-header">
+        <div>
+          <div class="page-title">SAÍDA DE PEÇAS</div>
+          <div class="page-subtitle">REGISTRAR USO OU RETIRADA DE ITENS DO ESTOQUE</div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-title">📤 Dados da Saída</div>
+        <div class="form-grid" style="margin-bottom:16px;">
+
+          <!-- Tipo de estoque -->
+          <div class="form-group">
+            <label>Tipo de Estoque *</label>
+            <select id="saidaTipoEstoque" onchange="onSaidaTipoChange()">
+              <option value="regular">Estoque Regular</option>
+              <option value="recon">Estoque Recondicionado</option>
+            </select>
+          </div>
+
+          <!-- Campo de busca com autocomplete -->
+          <div class="form-group span-2" style="position:relative;">
+            <label>Peça * <span style="color:var(--text3);font-size:9px;">(DIGITE PARA BUSCAR OU SELECIONE)</span></label>
+            <input type="text" id="saidaBusca" placeholder="Digite o nome ou código da peça..." autocomplete="off"
+              oninput="filtrarSaidaOpcoes()" onfocus="filtrarSaidaOpcoes()" onblur="setTimeout(()=>fecharSaidaDropdown(),200)"
+              style="width:100%;">
+            <input type="hidden" id="saidaPecaId">
+            <input type="hidden" id="saidaPecaTipo">
+            <div id="saidaDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-radius:0 0 8px 8px;z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Quantidade *</label>
+            <input type="number" id="saidaQtd" min="1" value="1" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Destino / Contêiner</label>
+            <input type="text" id="saidaDestino" placeholder="Ex: TCKU1234567">
+          </div>
+          <div class="form-group">
+            <label>Motivo</label>
+            <select id="saidaMotivo">
+              <option>Manutenção Preventiva</option>
+              <option>Manutenção Corretiva</option>
+              <option>Substituição</option>
+              <option>Transferência</option>
+              <option>Descarte</option>
+              <option>Outros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="saidaData">
+          </div>
+          <div class="form-group">
+            <label>Colaborador</label>
+            <input type="text" id="saidaColaborador" placeholder="Nome do funcionário que retirou">
+          </div>
+          <div class="form-group">
+            <label>Usuário Responsável</label>
+            <input type="text" id="saidaUsuario" readonly style="opacity:.7;">
+          </div>
+          <div class="form-group span-3">
+            <label>Observações</label>
+            <textarea id="saidaObs" rows="2" placeholder="Observações adicionais..."></textarea>
+          </div>
+        </div>
+        <div id="saidaInfo" style="display:none;margin-bottom:16px;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button class="btn btn-outline" onclick="limparSaida()">Limpar</button>
+          <button class="btn btn-danger" onclick="registrarSaida()">✓ Registrar Saída</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ HISTÓRICO ═══ -->
+    <div id="tab-historico" class="tab">
+      <div class="page-header">
+        <div>
+          <div class="page-title">HISTÓRICO DE MOVIMENTAÇÕES</div>
+          <div class="page-subtitle">REGISTRO COMPLETO DE ENTRADAS E SAÍDAS</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportarHistorico()">⬇ Exportar CSV</button>
+      </div>
+
+      <div class="table-container">
+        <div class="table-toolbar">
+          <div class="table-toolbar-left">
+            <div class="search-box">
+              <span>🔍</span>
+              <input type="text" placeholder="Buscar..." id="searchHistorico" oninput="renderHistorico()">
+            </div>
+            <select style="width:140px;padding:8px 12px;font-size:13px;" id="filterTipo" onchange="renderHistorico()">
+              <option value="">Todos</option>
+              <option value="ENTRADA">Entradas</option>
+              <option value="SAÍDA">Saídas</option>
+            </select>
+            <input type="date" id="filterDataInicio" onchange="renderHistorico()" style="width:150px;padding:8px 12px;font-size:13px;">
+            <input type="date" id="filterDataFim" onchange="renderHistorico()" style="width:150px;padding:8px 12px;font-size:13px;">
+          </div>
+          <span id="historicoCount" style="font-size:12px;color:var(--text2);">0 registros</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Tipo</th>
+              <th>Peça</th>
+              <th>Código</th>
+              <th>Categoria</th>
+              <th>Qtd</th>
+              <th>Ref. / Destino</th>
+              <th>Colaborador</th>
+              <th>Usuário</th>
+              <th>Obs</th>
+            </tr>
+          </thead>
+          <tbody id="tableHistorico"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ LISTA DE PEDIDO ═══ -->
+    <div id="tab-lista" class="tab">
+      <div class="page-header no-print">
+        <div>
+          <div class="page-title">LISTA DE PEDIDO</div>
+          <div class="page-subtitle">CRIAR E IMPRIMIR LISTA DE COMPRAS</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-outline no-print" onclick="adicionarItemPedido()">+ Adicionar Item</button>
+          <button class="btn btn-primary no-print" onclick="imprimirLista()">🖨 Imprimir Lista</button>
+          <button class="btn btn-ghost no-print" onclick="limparLista()">🗑 Limpar</button>
+        </div>
+      </div>
+
+      <!-- Formulário de adição rápida -->
+      <div class="form-card no-print" id="formPedidoCard" style="display:none;">
+        <div class="form-card-title">➕ Adicionar ao Pedido</div>
+        <div class="form-grid form-grid-4" style="margin-bottom:16px;">
+          <div class="form-group span-2">
+            <label>Peça</label>
+            <select id="pedidoPecaSelect">
+              <option value="">Selecionar peça ou digitar abaixo...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Qtd Solicitada</label>
+            <input type="number" id="pedidoQtd" min="1" value="1">
+          </div>
+          <div class="form-group">
+            <label>Unid.</label>
+            <input type="text" id="pedidoUnid" placeholder="UN, PC, KG..." value="UN">
+          </div>
+          <div class="form-group span-2">
+            <label>Descrição Manual (opcional)</label>
+            <input type="text" id="pedidoDescManual" placeholder="Ou descreva manualmente...">
+          </div>
+          <div class="form-group">
+            <label>Código Manual</label>
+            <input type="text" id="pedidoCodigoManual" placeholder="REF-0000">
+          </div>
+          <div class="form-group">
+            <label>Prioridade</label>
+            <select id="pedidoPrioridade">
+              <option value="Normal">Normal</option>
+              <option value="Alta">Alta</option>
+              <option value="Urgente">Urgente</option>
+            </select>
+          </div>
+          <div class="form-group span-3">
+            <label>Observação do item</label>
+            <input type="text" id="pedidoObsItem" placeholder="Ex: Verificar compatibilidade com modelo X">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('formPedidoCard').style.display='none'">Cancelar</button>
+          <button class="btn btn-primary btn-sm" onclick="confirmarItemPedido()">Adicionar</button>
+        </div>
+      </div>
+
+      <!-- Cabeçalho da lista para impressão -->
+      <div class="form-card" id="listaCabecalho">
+        <div class="form-card-title no-print">📄 Cabeçalho do Pedido</div>
+        <div class="form-grid form-grid-4">
+          <div class="form-group span-2">
+            <label>Empresa / Armador</label>
+            <input type="text" id="listEmpresa" placeholder="Ex: Maersk Line / Porto de Santos">
+          </div>
+          <div class="form-group">
+            <label>Data do Pedido</label>
+            <input type="date" id="listData">
+          </div>
+          <div class="form-group">
+            <label>Solicitante</label>
+            <input type="text" id="listSolicitante">
+          </div>
+          <div class="form-group span-4">
+            <label>Observações Gerais</label>
+            <textarea id="listObs" rows="2" placeholder="Observações para o fornecedor..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de itens -->
+      <div id="listaPedidoContainer">
+        <div class="empty-state no-print" id="listaVazia">
+          <div class="empty-state-icon">🛒</div>
+          <div class="empty-state-text">Nenhum item na lista.<br>Clique em <strong>"+ Adicionar Item"</strong> para começar.</div>
+        </div>
+        <div id="listaPedidoItems"></div>
+      </div>
+
+      <!-- Totais -->
+      <div id="listaTotais" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-top:16px;display:flex;justify-content:flex-end;gap:40px;align-items:center;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--text2);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Total de Itens</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent);" id="totalItens">0</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--text2);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Qtd Total</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green);" id="totalQtd">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ USUÁRIOS ═══ -->
+    <div id="tab-usuarios" class="tab">
+      <div class="page-header">
+        <div>
+          <div class="page-title">GERENCIAR USUÁRIOS</div>
+          <div class="page-subtitle">CADASTRO, SENHAS E PERMISSÕES</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModalNovoUsuario()">+ Novo Usuário</button>
+      </div>
+
+      <div class="inner-tabs">
+        <div class="inner-tab active" onclick="switchInnerTab('usuarios-lista', this)">Lista de Usuários</div>
+        <div class="inner-tab" onclick="switchInnerTab('usuarios-senha', this)">Trocar Senha</div>
+        <div class="inner-tab" onclick="switchInnerTab('usuarios-perfil', this)">Meu Perfil</div>
+      </div>
+
+      <!-- Lista -->
+      <div id="usuarios-lista">
+        <div id="usersGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;"></div>
+      </div>
+
+      <!-- Trocar senha -->
+      <div id="usuarios-senha" style="display:none;">
+        <div class="form-card" style="max-width:480px;">
+          <div class="form-card-title">🔒 Trocar Senha</div>
+          <div class="alert alert-info">ℹ️ Selecione o usuário e defina a nova senha.</div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Usuário</label>
+            <select id="senhaUserSelect"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Nova Senha</label>
+            <input type="password" id="novaSenha" placeholder="••••••••">
+          </div>
+          <div class="form-group" style="margin-bottom:20px;">
+            <label>Confirmar Nova Senha</label>
+            <input type="password" id="confirmarSenha" placeholder="••••••••">
+          </div>
+          <button class="btn btn-primary" onclick="trocarSenha()">✓ Alterar Senha</button>
+        </div>
+      </div>
+
+      <!-- Meu Perfil -->
+      <div id="usuarios-perfil" style="display:none;">
+        <div class="form-card" style="max-width:480px;">
+          <div class="form-card-title">👤 Meu Perfil</div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Nome de Usuário</label>
+            <input type="text" id="perfilNome" placeholder="Seu nome">
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>E-mail</label>
+            <input type="email" id="perfilEmail" placeholder="email@empresa.com">
+          </div>
+          <div class="form-group" style="margin-bottom:20px;">
+            <label>Cargo</label>
+            <input type="text" id="perfilCargo" placeholder="Ex: Técnico de Manutenção">
+          </div>
+          <button class="btn btn-primary" onclick="salvarPerfil()">✓ Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ NOTAS FISCAIS ═══ -->
+    <div id="tab-notas" class="tab">
+      <div class="page-header">
+        <div>
+          <div class="page-title">NOTAS FISCAIS</div>
+          <div class="page-subtitle">REGISTRO E CONSULTA DE NOTAS FISCAIS RECEBIDAS</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModalNF()">+ Registrar NF</button>
+      </div>
+
+      <div class="table-container">
+        <div class="table-toolbar">
+          <div class="table-toolbar-left">
+            <div class="search-box">
+              <span>🔍</span>
+              <input type="text" placeholder="Buscar NF, fornecedor..." id="searchNF" oninput="renderNotas()">
+            </div>
+            <input type="date" id="filterNFInicio" onchange="renderNotas()" style="width:150px;padding:8px 12px;font-size:13px;">
+            <input type="date" id="filterNFFim" onchange="renderNotas()" style="width:150px;padding:8px 12px;font-size:13px;">
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span id="nfCount" style="font-size:12px;color:var(--text2);">0 notas</span>
+            <button class="btn btn-sm btn-outline" onclick="exportarNotas()">⬇ Exportar CSV</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Número NF</th>
+              <th>Fornecedor</th>
+              <th>Data Emissão</th>
+              <th>Data Recebimento</th>
+              <th>Itens / Descritivo</th>
+              <th>Valor Total</th>
+              <th>Responsável</th>
+              <th>Status</th>
+              <th>Obs</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tableNotas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ RECONDICIONADAS ═══ -->
+    <div id="tab-recondicionadas" class="tab">
+      <div class="page-header">
+        <div>
+          <div class="page-title">ESTOQUE RECONDICIONADO</div>
+          <div class="page-subtitle">PEÇAS RECONDICIONADAS — CONTROLE SEPARADO</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModalRecon()">+ Registrar Peça</button>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div class="stats-grid" style="grid-template-columns:repeat(2,1fr);">
+          <div class="stat-card" style="border-top:2px solid var(--accent2);">
+            <div class="stat-label">Total Recondicionadas</div>
+            <div class="stat-value" style="color:var(--accent2);" id="reconTotal">0</div>
+            <div class="stat-sub">peças no estoque</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Com QC Registrado</div>
+            <div class="stat-value" id="reconAprovado">0</div>
+            <div class="stat-sub">peças com nº QC</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <div class="table-toolbar">
+          <div class="table-toolbar-left">
+            <div class="search-box">
+              <span>🔍</span>
+              <input type="text" placeholder="Buscar nome, P/N, ID, QC..." id="searchRecon" oninput="renderRecon()">
+            </div>
+          </div>
+          <span id="reconCount" style="font-size:12px;color:var(--text2);">0 itens</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome da Peça</th>
+              <th>P/N (Part Number)</th>
+              <th>Nº QC</th>
+              <th>Fornecedor</th>
+              <th>Data Entrada</th>
+              <th>Registrado por</th>
+              <th>Obs</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tableRecon"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ MODAL PEÇA ═══ -->
+<div class="modal-overlay" id="modalPeca">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalPecaTitle">NOVA PEÇA</div>
+      <button class="modal-close" onclick="closeModal('modalPeca')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Código *</label>
+        <input type="text" id="pecaCodigo" placeholder="REF-00000" style="font-family:'IBM Plex Mono',monospace;">
+      </div>
+      <div class="form-group span-2">
+        <label>Descrição *</label>
+        <input type="text" id="pecaDescricao" placeholder="Nome completo da peça">
+      </div>
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select id="pecaCategoria">
+          <option value="">Selecionar...</option>
+          <option>Compressor</option>
+          <option>Evaporador</option>
+          <option>Condensador</option>
+          <option>Elétrica</option>
+          <option>Filtro/Secador</option>
+          <option>Estrutura</option>
+          <option>Outros</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Unidade</label>
+        <select id="pecaUnidade">
+          <option>UN</option>
+          <option>PC</option>
+          <option>KG</option>
+          <option>MT</option>
+          <option>LT</option>
+          <option>CX</option>
+          <option>JG</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fabricante</label>
+        <input type="text" id="pecaFabricante" placeholder="Ex: Thermo King">
+      </div>
+      <div class="form-group">
+        <label>Estoque Inicial</label>
+        <input type="number" id="pecaEstoqueInicial" min="0" value="0">
+      </div>
+      <div class="form-group">
+        <label>Estoque Mínimo</label>
+        <input type="number" id="pecaEstoqueMin" min="0" value="2">
+      </div>
+      <div class="form-group">
+        <label>Localização</label>
+        <input type="text" id="pecaLocalizacao" placeholder="Ex: Prateleira A1">
+      </div>
+      <div class="form-group span-3">
+        <label>Observações</label>
+        <textarea id="pecaObs" rows="2" placeholder="Compatibilidade, especificações técnicas..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalPeca')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarPeca()">✓ Salvar Peça</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL NOVO USUÁRIO ═══ -->
+<div class="modal-overlay" id="modalUsuario">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">NOVO USUÁRIO</div>
+      <button class="modal-close" onclick="closeModal('modalUsuario')">✕</button>
+    </div>
+    <div class="form-grid form-grid-2">
+      <div class="form-group span-2">
+        <label>Nome Completo *</label>
+        <input type="text" id="novoUserNome" placeholder="Nome do usuário">
+      </div>
+      <div class="form-group">
+        <label>E-mail *</label>
+        <input type="email" id="novoUserEmail" placeholder="email@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Cargo</label>
+        <input type="text" id="novoUserCargo" placeholder="Ex: Técnico">
+      </div>
+      <div class="form-group">
+        <label>Nível de Acesso</label>
+        <select id="novoUserRole">
+          <option value="Operador">Operador</option>
+          <option value="Admin">Administrador</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Senha *</label>
+        <input type="password" id="novoUserSenha" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarNovoUsuario()">✓ Criar Usuário</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL NOTA FISCAL ═══ -->
+<div class="modal-overlay" id="modalNF">
+  <div class="modal" style="width:620px;">
+    <div class="modal-header">
+      <div class="modal-title" id="modalNFTitle">REGISTRAR NOTA FISCAL</div>
+      <button class="modal-close" onclick="closeModal('modalNF')">✕</button>
+    </div>
+    <div class="form-grid" style="gap:14px;">
+      <div class="form-group">
+        <label>Número da NF *</label>
+        <input type="text" id="nfNumero" placeholder="NF-000000" style="font-family:'IBM Plex Mono',monospace;">
+      </div>
+      <div class="form-group span-2">
+        <label>Fornecedor *</label>
+        <input type="text" id="nfFornecedor" placeholder="Nome do fornecedor / empresa">
+      </div>
+      <div class="form-group">
+        <label>Data de Emissão</label>
+        <input type="date" id="nfDataEmissao">
+      </div>
+      <div class="form-group">
+        <label>Data de Recebimento *</label>
+        <input type="date" id="nfDataRecebimento">
+      </div>
+      <div class="form-group">
+        <label>Valor Total (R$)</label>
+        <input type="number" id="nfValor" min="0" step="0.01" placeholder="0,00">
+      </div>
+      <div class="form-group span-2">
+        <label>Itens / Descritivo</label>
+        <input type="text" id="nfItens" placeholder="Ex: Compressor, Filtro Secador, Evaporador...">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="nfStatus">
+          <option value="Recebida">Recebida</option>
+          <option value="Em Conferência">Em Conferência</option>
+          <option value="Conferida">Conferida</option>
+          <option value="Com Divergência">Com Divergência</option>
+        </select>
+      </div>
+      <div class="form-group span-3">
+        <label>Observações</label>
+        <textarea id="nfObs" rows="2" placeholder="Observações, divergências, pendências..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalNF')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarNF()">✓ Registrar Nota</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL RECONDICIONADA ═══ -->
+<div class="modal-overlay" id="modalRecon">
+  <div class="modal" style="width:600px;">
+    <div class="modal-header">
+      <div class="modal-title" id="modalReconTitle">REGISTRAR PEÇA RECONDICIONADA</div>
+      <button class="modal-close" onclick="closeModal('modalRecon')">✕</button>
+    </div>
+    <div class="form-grid" style="gap:14px;">
+      <div class="form-group span-2">
+        <label>Nome da Peça *</label>
+        <input type="text" id="reconNome" placeholder="Ex: Compressor Scroll Recondicionado">
+      </div>
+      <div class="form-group">
+        <label>P/N (Part Number) *</label>
+        <input type="text" id="reconPN" placeholder="Ex: TK-456789-01" style="font-family:'IBM Plex Mono',monospace;">
+      </div>
+      <div class="form-group">
+        <label>ID *</label>
+        <input type="text" id="reconID" placeholder="Ex: RC-2026-001" style="font-family:'IBM Plex Mono',monospace;">
+      </div>
+      <div class="form-group">
+        <label>Nº QC *</label>
+        <input type="text" id="reconQC" placeholder="Ex: 10588" style="font-family:'IBM Plex Mono',monospace;">
+      </div>
+      <div class="form-group span-2">
+        <label>Fornecedor</label>
+        <input type="text" id="reconFornecedor" placeholder="Nome do fornecedor / origem da peça">
+      </div>
+      <div class="form-group">
+        <label>Data de Entrada</label>
+        <input type="date" id="reconDataEntrada">
+      </div>
+      <div class="form-group span-3">
+        <label>Observações / Histórico da Peça</label>
+        <textarea id="reconObs" rows="3" placeholder="Descreva o processo de recondicionamento, origem, reparos realizados..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalRecon')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarRecon()">✓ Registrar Peça</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA STORE
+// ══════════════════════════════════════════════
+
+let db = {
+  pecas: [],
+  historico: [],
+  notas: [],
+  recondicionadas: [],
+  usuarios: [
+    { id: 1, nome: 'Administrador', email: 'admin@reefer.com', cargo: 'Gerente de Estoque', role: 'Admin', senha: '1234', cor: '#00d4ff' }
+  ],
+  listaPedido: [],
+  currentUser: 1
+};
+
+// Salvar / carregar localStorage
+function save() {
+  try { localStorage.setItem('reeferstock_db', JSON.stringify(db)); } catch(e) {}
+}
+
+function load() {
+  try {
+    const s = localStorage.getItem('reeferstock_db');
+    if (s) {
+      const loaded = JSON.parse(s);
+      db = { ...db, ...loaded };
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  // update nav
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') === `showTab('${tab}')`) n.classList.add('active');
+  });
+
+  // refresh views
+  if (tab === 'dashboard') refreshDashboard();
+  if (tab === 'pecas') renderPecas();
+  if (tab === 'entrada') populateSelectPecas('entradaPeca');
+  if (tab === 'saida') { limparSaidaPeca(); }
+  if (tab === 'historico') renderHistorico();
+  if (tab === 'lista') { populateSelectPecas('pedidoPecaSelect'); renderListaPedido(); }
+  if (tab === 'notas') renderNotas();
+  if (tab === 'recondicionadas') renderRecon();
+  if (tab === 'usuarios') renderUsuarios();
+}
+
+function switchInnerTab(id, el) {
+  ['usuarios-lista','usuarios-senha','usuarios-perfil'].forEach(t => {
+    document.getElementById(t).style.display = 'none';
+  });
+  document.querySelectorAll('.inner-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).style.display = '';
+  el.classList.add('active');
+  if (id === 'usuarios-senha') populateSenhaSelect();
+  if (id === 'usuarios-perfil') loadPerfil();
+}
+
+// ══════════════════════════════════════════════
+// TOASTS
+// ══════════════════════════════════════════════
+
+function toast(msg, type = 'success') {
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+  const el = document.createElement('div');
+  el.className = `toast ${type !== 'success' ? type : ''}`;
+  el.innerHTML = `<span>${icon}</span> ${msg}`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ══════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════
+
+let editingPecaId = null;
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openModalPeca(id = null) {
+  editingPecaId = id;
+  if (id) {
+    const p = db.pecas.find(x => x.id === id);
+    document.getElementById('modalPecaTitle').textContent = 'EDITAR PEÇA';
+    document.getElementById('pecaCodigo').value = p.codigo;
+    document.getElementById('pecaDescricao').value = p.descricao;
+    document.getElementById('pecaCategoria').value = p.categoria;
+    document.getElementById('pecaUnidade').value = p.unidade;
+    document.getElementById('pecaFabricante').value = p.fabricante || '';
+    document.getElementById('pecaEstoqueInicial').value = p.estoque;
+    document.getElementById('pecaEstoqueMin').value = p.estoqueMin;
+    document.getElementById('pecaLocalizacao').value = p.localizacao || '';
+    document.getElementById('pecaObs').value = p.obs || '';
+  } else {
+    document.getElementById('modalPecaTitle').textContent = 'NOVA PEÇA';
+    ['pecaCodigo','pecaDescricao','pecaFabricante','pecaLocalizacao','pecaObs'].forEach(f => document.getElementById(f).value = '');
+    document.getElementById('pecaCategoria').value = '';
+    document.getElementById('pecaUnidade').value = 'UN';
+    document.getElementById('pecaEstoqueInicial').value = 0;
+    document.getElementById('pecaEstoqueMin').value = 2;
+  }
+  openModal('modalPeca');
+}
+
+function salvarPeca() {
+  const codigo = document.getElementById('pecaCodigo').value.trim();
+  const descricao = document.getElementById('pecaDescricao').value.trim();
+  const categoria = document.getElementById('pecaCategoria').value;
+  if (!codigo || !descricao || !categoria) return toast('Preencha os campos obrigatórios.', 'error');
+
+  if (editingPecaId) {
+    const p = db.pecas.find(x => x.id === editingPecaId);
+    p.codigo = codigo;
+    p.descricao = descricao;
+    p.categoria = categoria;
+    p.unidade = document.getElementById('pecaUnidade').value;
+    p.fabricante = document.getElementById('pecaFabricante').value;
+    p.estoqueMin = parseInt(document.getElementById('pecaEstoqueMin').value) || 0;
+    p.localizacao = document.getElementById('pecaLocalizacao').value;
+    p.obs = document.getElementById('pecaObs').value;
+    toast('Peça atualizada com sucesso!');
+  } else {
+    const duplicado = db.pecas.find(x => x.codigo.toLowerCase() === codigo.toLowerCase());
+    if (duplicado) return toast('Código já cadastrado!', 'error');
+
+    const estoqueInicial = parseInt(document.getElementById('pecaEstoqueInicial').value) || 0;
+    db.pecas.push({
+      id: Date.now(),
+      codigo, descricao, categoria,
+      unidade: document.getElementById('pecaUnidade').value,
+      fabricante: document.getElementById('pecaFabricante').value,
+      estoque: estoqueInicial,
+      estoqueMin: parseInt(document.getElementById('pecaEstoqueMin').value) || 0,
+      localizacao: document.getElementById('pecaLocalizacao').value,
+      obs: document.getElementById('pecaObs').value,
+      criadoEm: new Date().toISOString()
+    });
+
+    if (estoqueInicial > 0) {
+      db.historico.unshift({
+        id: Date.now() + 1,
+        tipo: 'ENTRADA',
+        pecaId: db.pecas[db.pecas.length - 1].id,
+        pecaDesc: descricao,
+        pecaCodigo: codigo,
+        categoria,
+        qtd: estoqueInicial,
+        ref: 'Estoque inicial',
+        usuario: currentUserName(),
+        obs: 'Cadastro inicial da peça',
+        data: new Date().toISOString()
+      });
+    }
+
+    toast('Peça cadastrada com sucesso!');
+  }
+
+  save();
+  closeModal('modalPeca');
+  renderPecas();
+}
+
+function excluirPeca(id) {
+  if (!confirm('Excluir esta peça? O histórico será mantido.')) return;
+  db.pecas = db.pecas.filter(p => p.id !== id);
+  save();
+  renderPecas();
+  toast('Peça removida.', 'warning');
+}
+
+// ══════════════════════════════════════════════
+// RENDER PEÇAS
+// ══════════════════════════════════════════════
+
+function renderPecas() {
+  const search = (document.getElementById('searchPecas')?.value || '').toLowerCase();
+  const cat = document.getElementById('filterCategoria')?.value || '';
+
+  let list = db.pecas.filter(p => {
+    const matchSearch = !search || p.codigo.toLowerCase().includes(search) || p.descricao.toLowerCase().includes(search) || (p.fabricante||'').toLowerCase().includes(search);
+    const matchCat = !cat || p.categoria === cat;
+    return matchSearch && matchCat;
+  });
+
+  document.getElementById('pecasCount').textContent = list.length + ' peça' + (list.length !== 1 ? 's' : '');
+
+  const tbody = document.getElementById('tablePecas');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🔩</div><div class="empty-state-text">Nenhuma peça encontrada</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => {
+    const pct = p.estoqueMin > 0 ? Math.min((p.estoque / (p.estoqueMin * 3)) * 100, 100) : 100;
+    const status = p.estoque === 0 ? 'critical' : p.estoque <= p.estoqueMin ? 'low' : 'ok';
+    const statusLabel = { critical: '⛔ Zerado', low: '⚠️ Baixo', ok: '✅ OK' }[status];
+    const barColor = { critical: 'var(--red)', low: 'var(--yellow)', ok: 'var(--green)' }[status];
+
+    return `<tr>
+      <td class="mono" style="font-size:12px;color:var(--accent)">${p.codigo}</td>
+      <td>
+        <div style="font-weight:500">${p.descricao}</div>
+        <div style="font-size:11px;color:var(--text2)">${p.fabricante || '—'} · ${p.localizacao || '—'}</div>
+      </td>
+      <td><span style="font-size:12px;color:var(--text2)">${p.categoria}</span></td>
+      <td class="mono" style="font-size:12px">${p.unidade}</td>
+      <td>
+        <div style="font-weight:600;font-size:15px">${p.estoque}</div>
+        <div class="stock-bar"><div class="stock-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        <div style="font-size:10px;color:var(--text2)">mín: ${p.estoqueMin}</div>
+      </td>
+      <td class="mono">${p.estoqueMin}</td>
+      <td><span class="badge badge-${status}">${statusLabel}</span></td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-outline" onclick="openModalPeca(${p.id})">✏️</button>
+          <button class="btn btn-sm btn-ghost" onclick="excluirPeca(${p.id})" style="color:var(--red)">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// POPULAT SELECT PEÇAS
+// ══════════════════════════════════════════════
+
+function populateSelectPecas(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Selecionar peça...</option>';
+  db.pecas.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `[${p.codigo}] ${p.descricao}`;
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
+
+// ══════════════════════════════════════════════
+// ENTRADA
+// ══════════════════════════════════════════════
+
+function updateEntradaInfo() {
+  const id = parseInt(document.getElementById('entradaPeca').value);
+  const div = document.getElementById('entradaInfo');
+  if (!id) { div.style.display = 'none'; return; }
+  const p = db.pecas.find(x => x.id === id);
+  div.style.display = '';
+  div.innerHTML = `<div class="alert alert-info">📦 Estoque atual: <strong>${p.estoque} ${p.unidade}</strong> · Mínimo: <strong>${p.estoqueMin}</strong> · Categoria: ${p.categoria}</div>`;
+}
+
+function registrarEntrada() {
+  const pecaId = parseInt(document.getElementById('entradaPeca').value);
+  const qtd = parseInt(document.getElementById('entradaQtd').value);
+  if (!pecaId || !qtd || qtd < 1) return toast('Selecione a peça e quantidade.', 'error');
+
+  const p = db.pecas.find(x => x.id === pecaId);
+  p.estoque += qtd;
+
+  db.historico.unshift({
+    id: Date.now(),
+    tipo: 'ENTRADA',
+    pecaId,
+    pecaDesc: p.descricao,
+    pecaCodigo: p.codigo,
+    categoria: p.categoria,
+    qtd,
+    ref: document.getElementById('entradaNF').value || document.getElementById('entradaFornecedor').value || '—',
+    usuario: currentUserName(),
+    obs: document.getElementById('entradaObs').value,
+    data: new Date().toISOString()
+  });
+
+  save();
+  toast(`✅ Entrada de ${qtd} ${p.unidade} de "${p.descricao}" registrada!`);
+  limparEntrada();
+}
+
+function limparEntrada() {
+  document.getElementById('entradaPeca').value = '';
+  document.getElementById('entradaQtd').value = 1;
+  document.getElementById('entradaFornecedor').value = '';
+  document.getElementById('entradaNF').value = '';
+  document.getElementById('entradaObs').value = '';
+  document.getElementById('entradaInfo').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// SAÍDA
+// ══════════════════════════════════════════════
+
+function onSaidaTipoChange() {
+  limparSaidaPeca();
+  filtrarSaidaOpcoes();
+}
+
+function filtrarSaidaOpcoes() {
+  const tipo = document.getElementById('saidaTipoEstoque').value;
+  const busca = (document.getElementById('saidaBusca').value || '').toLowerCase().trim();
+  const dropdown = document.getElementById('saidaDropdown');
+
+  let opcoes = [];
+
+  if (tipo === 'regular' || tipo === '') {
+    db.pecas.forEach(p => {
+      if (!busca || p.descricao.toLowerCase().includes(busca) || p.codigo.toLowerCase().includes(busca) || (p.fabricante||'').toLowerCase().includes(busca)) {
+        opcoes.push({ id: p.id, tipo: 'regular', label: p.descricao, code: p.codigo, sub: `Estoque: ${p.estoque} ${p.unidade}`, estoque: p.estoque, unidade: p.unidade });
+      }
+    });
+  }
+
+  if (tipo === 'recon' || tipo === '') {
+    (db.recondicionadas || []).forEach(r => {
+      if (!busca || r.nome.toLowerCase().includes(busca) || r.pn.toLowerCase().includes(busca) || r.idPeca.toLowerCase().includes(busca)) {
+        opcoes.push({ id: r.id, tipo: 'recon', label: r.nome, code: r.pn, sub: `ID: ${r.idPeca} · QC: ${r.qc || '—'}`, estoque: 1, unidade: 'UN' });
+      }
+    });
+  }
+
+  if (!opcoes.length) {
+    dropdown.innerHTML = `<div class="saida-option" style="color:var(--text2);cursor:default;">Nenhuma peça encontrada</div>`;
+    dropdown.style.display = '';
+    return;
+  }
+
+  dropdown._opcoes = opcoes;
+
+  dropdown.innerHTML = opcoes.map((o, i) => `
+    <div class="saida-option" data-idx="${i}" onmousedown="selecionarSaidaPecaIdx(${i})">
+      <div style="flex:1;">
+        <div style="font-weight:500">${o.label}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:2px;">
+          <span class="saida-option-code">${o.code}</span>
+          <span style="font-size:11px;color:var(--text2)">${o.sub}</span>
+        </div>
+      </div>
+      <span class="saida-option-badge ${o.tipo === 'recon' ? 'rec' : 'reg'}">${o.tipo === 'recon' ? '♻️ RECON' : '📦 REG'}</span>
+    </div>
+  `).join('');
+  dropdown.style.display = '';
+}
+
+function selecionarSaidaPecaIdx(idx) {
+  const dropdown = document.getElementById('saidaDropdown');
+  const o = dropdown._opcoes && dropdown._opcoes[idx];
+  if (!o) return;
+  selecionarSaidaPeca(o.id, o.tipo, o.label, o.code, o.estoque, o.unidade);
+}
+
+function selecionarSaidaPeca(id, tipo, label, code, estoque, unidade) {
+  document.getElementById('saidaBusca').value = label;
+  document.getElementById('saidaPecaId').value = id;
+  document.getElementById('saidaPecaTipo').value = tipo;
+  document.getElementById('saidaDropdown').style.display = 'none';
+  updateSaidaInfo();
+}
+
+function fecharSaidaDropdown() {
+  const dd = document.getElementById('saidaDropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+function limparSaidaPeca() {
+  document.getElementById('saidaBusca').value = '';
+  document.getElementById('saidaPecaId').value = '';
+  document.getElementById('saidaPecaTipo').value = '';
+  document.getElementById('saidaInfo').style.display = 'none';
+  document.getElementById('saidaDropdown').style.display = 'none';
+}
+
+function updateSaidaInfo() {
+  const id = parseInt(document.getElementById('saidaPecaId').value);
+  const tipo = document.getElementById('saidaPecaTipo').value;
+  const div = document.getElementById('saidaInfo');
+  if (!id || !tipo) { div.style.display = 'none'; return; }
+
+  div.style.display = '';
+  if (tipo === 'regular') {
+    const p = db.pecas.find(x => x.id === id);
+    if (!p) return;
+    const warning = p.estoque <= p.estoqueMin ? `<div class="alert alert-warning">⚠️ Estoque abaixo do mínimo!</div>` : '';
+    div.innerHTML = `${warning}<div class="alert alert-info">📦 Disponível em estoque: <strong>${p.estoque} ${p.unidade}</strong> · Categoria: ${p.categoria}</div>`;
+  } else {
+    const r = (db.recondicionadas || []).find(x => x.id === id);
+    if (!r) return;
+    div.innerHTML = `<div class="alert alert-info" style="border-color:rgba(255,107,53,.3);background:rgba(255,107,53,.07);color:var(--accent2);">♻️ Peça Recondicionada · P/N: <strong>${r.pn}</strong> · ID: <strong>${r.idPeca}</strong> · QC: <strong>${r.qc || '—'}</strong></div>`;
+  }
+}
+
+function registrarSaida() {
+  const id = parseInt(document.getElementById('saidaPecaId').value);
+  const tipo = document.getElementById('saidaPecaTipo').value;
+  const qtd = parseInt(document.getElementById('saidaQtd').value);
+  const busca = document.getElementById('saidaBusca').value.trim();
+
+  if (!busca || !id || !tipo) return toast('Selecione uma peça da lista.', 'error');
+  if (!qtd || qtd < 1) return toast('Informe a quantidade.', 'error');
+
+  let pecaDesc, pecaCodigo, categoria;
+
+  if (tipo === 'regular') {
+    const p = db.pecas.find(x => x.id === id);
+    if (!p) return toast('Peça não encontrada.', 'error');
+    if (qtd > p.estoque) return toast(`Estoque insuficiente! Disponível: ${p.estoque} ${p.unidade}`, 'error');
+    p.estoque -= qtd;
+    pecaDesc = p.descricao;
+    pecaCodigo = p.codigo;
+    categoria = p.categoria;
+  } else {
+    const r = (db.recondicionadas || []).find(x => x.id === id);
+    if (!r) return toast('Peça recondicionada não encontrada.', 'error');
+    pecaDesc = r.nome;
+    pecaCodigo = r.pn;
+    categoria = '♻️ Recondicionada';
+    // Remove do estoque recon após saída
+    db.recondicionadas = db.recondicionadas.filter(x => x.id !== id);
+  }
+
+  db.historico.unshift({
+    id: Date.now(),
+    tipo: 'SAÍDA',
+    pecaId: id,
+    pecaDesc,
+    pecaCodigo,
+    categoria,
+    qtd,
+    ref: document.getElementById('saidaDestino').value + (document.getElementById('saidaMotivo').value ? ' / ' + document.getElementById('saidaMotivo').value : ''),
+    colaborador: document.getElementById('saidaColaborador').value.trim() || '—',
+    usuario: currentUserName(),
+    obs: document.getElementById('saidaObs').value,
+    data: new Date().toISOString()
+  });
+
+  save();
+  toast(`📤 Saída de "${pecaDesc}" registrada com sucesso!`);
+  limparSaida();
+}
+
+function limparSaida() {
+  limparSaidaPeca();
+  document.getElementById('saidaQtd').value = 1;
+  document.getElementById('saidaDestino').value = '';
+  document.getElementById('saidaColaborador').value = '';
+  document.getElementById('saidaObs').value = '';
+  document.getElementById('saidaInfo').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// HISTÓRICO
+// ══════════════════════════════════════════════
+
+function renderHistorico() {
+  const search = (document.getElementById('searchHistorico')?.value || '').toLowerCase();
+  const tipo = document.getElementById('filterTipo')?.value || '';
+  const dI = document.getElementById('filterDataInicio')?.value;
+  const dF = document.getElementById('filterDataFim')?.value;
+
+  let list = db.historico.filter(h => {
+    const matchSearch = !search || h.pecaDesc.toLowerCase().includes(search) || h.pecaCodigo.toLowerCase().includes(search) || (h.ref||'').toLowerCase().includes(search);
+    const matchTipo = !tipo || h.tipo === tipo;
+    const hDate = h.data.split('T')[0];
+    const matchInicio = !dI || hDate >= dI;
+    const matchFim = !dF || hDate <= dF;
+    return matchSearch && matchTipo && matchInicio && matchFim;
+  });
+
+  document.getElementById('historicoCount').textContent = list.length + ' registros';
+
+  const tbody = document.getElementById('tableHistorico');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhum registro encontrado</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(h => {
+    const isEntrada = h.tipo === 'ENTRADA';
+    const isRecon = (h.categoria || '').includes('Recondicionada');
+    const d = new Date(h.data);
+    const dataFmt = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    return `<tr>
+      <td class="mono" style="font-size:11px;color:var(--text2)">${dataFmt}</td>
+      <td>
+        <span class="badge ${isEntrada ? 'badge-in' : 'badge-out'}">${isEntrada ? '↑ ENTRADA' : '↓ SAÍDA'}</span>
+        ${isRecon ? `<span class="badge" style="background:rgba(255,107,53,.12);color:var(--accent2);margin-left:4px;font-size:9px;">♻️ RECON</span>` : ''}
+      </td>
+      <td><div style="font-weight:500;font-size:13px">${h.pecaDesc}</div></td>
+      <td class="mono" style="font-size:11px;color:${isRecon ? 'var(--accent2)' : 'var(--accent)'}">${h.pecaCodigo}</td>
+      <td style="font-size:12px;color:var(--text2)">${h.categoria}</td>
+      <td style="font-weight:700;color:${isEntrada ? 'var(--green)' : 'var(--red)'}">${isEntrada ? '+' : '-'}${h.qtd}</td>
+      <td style="font-size:12px;color:var(--text2)">${h.ref || '—'}</td>
+      <td style="font-size:12px;color:var(--text2)">${h.colaborador && h.colaborador !== '—' ? `<span style="color:var(--text);font-weight:500">${h.colaborador}</span>` : '—'}</td>
+      <td style="font-size:12px">${h.usuario}</td>
+      <td style="font-size:11px;color:var(--text2)">${h.obs || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportarHistorico() {
+  const header = ['Data','Tipo','Peça','Código','Categoria','Quantidade','Referência','Colaborador','Usuário','Observações'];
+  const rows = db.historico.map(h => [
+    new Date(h.data).toLocaleString('pt-BR'),
+    h.tipo, h.pecaDesc, h.pecaCodigo, h.categoria, h.qtd, h.ref, h.colaborador || '—', h.usuario, h.obs
+  ]);
+  const csv = [header, ...rows].map(r => r.join(';')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `historico_reefer_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+  a.click();
+  toast('Histórico exportado com sucesso!');
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+
+function refreshDashboard() {
+  document.getElementById('statTotal').textContent = db.pecas.length;
+
+  const now = new Date();
+  const mes = now.getMonth(); const ano = now.getFullYear();
+  const doMes = db.historico.filter(h => {
+    const d = new Date(h.data);
+    return d.getMonth() === mes && d.getFullYear() === ano;
+  });
+
+  const entradas = doMes.filter(h => h.tipo === 'ENTRADA').reduce((s, h) => s + h.qtd, 0);
+  const saidas = doMes.filter(h => h.tipo === 'SAÍDA').reduce((s, h) => s + h.qtd, 0);
+  document.getElementById('statEntradas').textContent = entradas;
+  document.getElementById('statSaidas').textContent = saidas;
+
+  const baixo = db.pecas.filter(p => p.estoque <= p.estoqueMin).length;
+  document.getElementById('statBaixo').textContent = baixo;
+
+  const alertas = document.getElementById('alertasBaixo');
+  const criticos = db.pecas.filter(p => p.estoque <= p.estoqueMin);
+  if (criticos.length) {
+    alertas.innerHTML = criticos.map(p => `
+      <div class="alert ${p.estoque === 0 ? 'alert-warning' : 'alert-info'}" style="${p.estoque===0?'background:rgba(255,61,87,.07);border-color:rgba(255,61,87,.2);color:var(--red)':''}">
+        ${p.estoque === 0 ? '⛔' : '⚠️'} <strong>${p.descricao}</strong> [${p.codigo}] — Estoque: <strong>${p.estoque} ${p.unidade}</strong> (mín: ${p.estoqueMin})
+        <button class="btn btn-sm btn-outline no-print" style="margin-left:auto" onclick="adicionarAlertaAoPedido(${p.id})">+ Pedir</button>
+      </div>
+    `).join('');
+  } else {
+    alertas.innerHTML = '';
+  }
+
+  const recent = db.historico.slice(0, 8);
+  const tbody = document.getElementById('dashHistorico');
+  if (!recent.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhuma movimentação ainda</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = recent.map(h => {
+    const isEntrada = h.tipo === 'ENTRADA';
+    const isRecon = (h.categoria || '').includes('Recondicionada');
+    const d = new Date(h.data);
+    return `<tr>
+      <td class="mono" style="font-size:11px;color:var(--text2)">${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</td>
+      <td>
+        <span class="badge ${isEntrada ? 'badge-in' : 'badge-out'}">${isEntrada ? '↑ ENTRADA' : '↓ SAÍDA'}</span>
+        ${isRecon ? `<span class="badge" style="background:rgba(255,107,53,.12);color:var(--accent2);margin-left:4px;font-size:9px;">♻️</span>` : ''}
+      </td>
+      <td style="font-size:13px;font-weight:500">${h.pecaDesc}</td>
+      <td class="mono" style="font-size:11px;color:${isRecon ? 'var(--accent2)' : 'var(--accent)'}">${h.pecaCodigo}</td>
+      <td style="font-weight:700;color:${isEntrada ? 'var(--green)' : 'var(--red)'}">${isEntrada ? '+' : '-'}${h.qtd}</td>
+      <td style="font-size:12px">${h.usuario}</td>
+      <td style="font-size:11px;color:var(--text2)">${h.obs || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// LISTA DE PEDIDO
+// ══════════════════════════════════════════════
+
+function adicionarItemPedido() {
+  populateSelectPecas('pedidoPecaSelect');
+  document.getElementById('formPedidoCard').style.display = '';
+  document.getElementById('pedidoQtd').value = 1;
+  document.getElementById('pedidoDescManual').value = '';
+  document.getElementById('pedidoCodigoManual').value = '';
+  document.getElementById('pedidoObsItem').value = '';
+}
+
+function confirmarItemPedido() {
+  const pecaId = parseInt(document.getElementById('pedidoPecaSelect').value);
+  let desc, codigo, unidade;
+
+  if (pecaId) {
+    const p = db.pecas.find(x => x.id === pecaId);
+    desc = p.descricao;
+    codigo = p.codigo;
+    unidade = p.unidade;
+  } else {
+    desc = document.getElementById('pedidoDescManual').value.trim();
+    codigo = document.getElementById('pedidoCodigoManual').value.trim();
+    unidade = document.getElementById('pedidoUnid').value.trim() || 'UN';
+  }
+
+  if (!desc) return toast('Selecione uma peça ou informe a descrição.', 'error');
+
+  db.listaPedido.push({
+    id: Date.now(),
+    pecaId: pecaId || null,
+    desc, codigo, unidade,
+    qtd: parseInt(document.getElementById('pedidoQtd').value) || 1,
+    prioridade: document.getElementById('pedidoPrioridade').value,
+    obs: document.getElementById('pedidoObsItem').value
+  });
+
+  save();
+  document.getElementById('formPedidoCard').style.display = 'none';
+  renderListaPedido();
+  toast('Item adicionado ao pedido!');
+}
+
+function adicionarAlertaAoPedido(pecaId) {
+  const p = db.pecas.find(x => x.id === pecaId);
+  db.listaPedido.push({
+    id: Date.now(), pecaId, desc: p.descricao, codigo: p.codigo, unidade: p.unidade,
+    qtd: p.estoqueMin * 2 - p.estoque, prioridade: p.estoque === 0 ? 'Urgente' : 'Alta', obs: 'Estoque baixo — gerado automaticamente'
+  });
+  save();
+  showTab('lista');
+  toast('Item adicionado à lista de pedido!');
+}
+
+function renderListaPedido() {
+  const container = document.getElementById('listaPedidoItems');
+  const vazia = document.getElementById('listaVazia');
+  const totais = document.getElementById('listaTotais');
+
+  if (!db.listaPedido.length) {
+    vazia.style.display = '';
+    container.innerHTML = '';
+    totais.style.display = 'none';
+    return;
+  }
+
+  vazia.style.display = 'none';
+  totais.style.display = 'flex';
+  document.getElementById('totalItens').textContent = db.listaPedido.length;
+  document.getElementById('totalQtd').textContent = db.listaPedido.reduce((s, i) => s + i.qtd, 0);
+
+  const prioColor = { Urgente: 'var(--red)', Alta: 'var(--yellow)', Normal: 'var(--text2)' };
+
+  container.innerHTML = db.listaPedido.map((item, idx) => `
+    <div class="pedido-item">
+      <div style="min-width:36px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text3)">${idx + 1}</div>
+      <div style="flex:1;">
+        <div class="pedido-item-name">${item.desc}</div>
+        <div class="pedido-item-code">${item.codigo ? '[' + item.codigo + ']' : ''} · ${item.unidade}
+          <span style="color:${prioColor[item.prioridade]};margin-left:8px">● ${item.prioridade}</span>
+        </div>
+        ${item.obs ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">${item.obs}</div>` : ''}
+      </div>
+      <div class="qty-control no-print">
+        <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
+        <input class="qty-display" type="number" value="${item.qtd}" min="1" onchange="setQty(${item.id}, this.value)">
+        <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);min-width:60px;text-align:center" class="print-qty">${item.qtd} ${item.unidade}</div>
+      <button class="btn btn-ghost no-print" style="color:var(--red)" onclick="removerItemPedido(${item.id})">🗑</button>
+    </div>
+  `).join('');
+}
+
+function changeQty(id, delta) {
+  const item = db.listaPedido.find(x => x.id === id);
+  if (!item) return;
+  item.qtd = Math.max(1, item.qtd + delta);
+  save();
+  renderListaPedido();
+}
+
+function setQty(id, val) {
+  const item = db.listaPedido.find(x => x.id === id);
+  if (!item) return;
+  item.qtd = Math.max(1, parseInt(val) || 1);
+  save();
+  renderListaPedido();
+}
+
+function removerItemPedido(id) {
+  db.listaPedido = db.listaPedido.filter(x => x.id !== id);
+  save();
+  renderListaPedido();
+}
+
+function limparLista() {
+  if (!confirm('Limpar toda a lista de pedido?')) return;
+  db.listaPedido = [];
+  save();
+  renderListaPedido();
+  toast('Lista limpa.', 'warning');
+}
+
+function imprimirLista() {
+  // Temporarily inject print styles
+  const style = document.createElement('style');
+  style.id = 'printStyle';
+  style.textContent = `
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: #fff !important; color: #000 !important; }
+      header, nav, .no-print { display: none !important; }
+      main { padding: 0 !important; max-height: none !important; overflow: visible !important; }
+      .tab { display: none !important; }
+      #tab-lista { display: block !important; }
+      .app-layout { display: block !important; }
+      .form-card { background: #f8f8f8 !important; border: 1px solid #ddd !important; border-radius: 8px !important; }
+      input, select, textarea { border: 1px solid #ccc !important; color: #000 !important; background: #fff !important; }
+      .pedido-item { background: #f0f0f0 !important; border: 1px solid #ccc !important; border-radius: 6px !important; margin-bottom: 6px !important; }
+      .pedido-item-name { color: #000 !important; }
+      .pedido-item-code { color: #555 !important; }
+      .print-qty { color: #000 !important; }
+      #listaTotais { background: #eee !important; border: 1px solid #ccc !important; color: #000 !important; }
+      .qty-control { display: none !important; }
+    }
+  `;
+  document.head.appendChild(style);
+  window.print();
+  setTimeout(() => style.remove(), 500);
+}
+
+// ══════════════════════════════════════════════
+// USUÁRIOS
+// ══════════════════════════════════════════════
+
+function currentUserName() {
+  const u = db.usuarios.find(x => x.id === db.currentUser);
+  return u ? u.nome : 'Sistema';
+}
+
+const CORES = ['#00d4ff','#ff6b35','#00e676','#ffd740','#ff3d57','#a29bfe'];
+
+function renderUsuarios() {
+  const grid = document.getElementById('usersGrid');
+  grid.innerHTML = db.usuarios.map(u => {
+    const initials = u.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="user-card">
+      <div class="user-card-avatar" style="background:${u.cor || '#00d4ff'}">${initials}</div>
+      <div class="user-card-info">
+        <div class="user-card-name">${u.nome}</div>
+        <div class="user-card-email">${u.email}</div>
+        <div style="margin-top:4px;display:flex;gap:6px;align-items:center">
+          <span class="badge ${u.role === 'Admin' ? 'badge-admin' : 'badge-op'}">${u.role}</span>
+          ${u.cargo ? `<span style="font-size:11px;color:var(--text2)">${u.cargo}</span>` : ''}
+        </div>
+      </div>
+      <div class="user-card-actions">
+        ${u.id !== 1 ? `<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="excluirUsuario(${u.id})">🗑</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openModalNovoUsuario() {
+  ['novoUserNome','novoUserEmail','novoUserCargo','novoUserSenha'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('novoUserRole').value = 'Operador';
+  openModal('modalUsuario');
+}
+
+function salvarNovoUsuario() {
+  const nome = document.getElementById('novoUserNome').value.trim();
+  const email = document.getElementById('novoUserEmail').value.trim();
+  const senha = document.getElementById('novoUserSenha').value;
+  if (!nome || !email || !senha) return toast('Preencha todos os campos obrigatórios.', 'error');
+
+  db.usuarios.push({
+    id: Date.now(),
+    nome, email,
+    cargo: document.getElementById('novoUserCargo').value,
+    role: document.getElementById('novoUserRole').value,
+    senha,
+    cor: CORES[db.usuarios.length % CORES.length]
+  });
+
+  save();
+  closeModal('modalUsuario');
+  renderUsuarios();
+  populateSenhaSelect();
+  toast('Usuário criado com sucesso!');
+}
+
+function excluirUsuario(id) {
+  if (!confirm('Excluir este usuário?')) return;
+  db.usuarios = db.usuarios.filter(u => u.id !== id);
+  save();
+  renderUsuarios();
+  toast('Usuário removido.', 'warning');
+}
+
+function populateSenhaSelect() {
+  const sel = document.getElementById('senhaUserSelect');
+  if (!sel) return;
+  sel.innerHTML = db.usuarios.map(u => `<option value="${u.id}">${u.nome} (${u.role})</option>`).join('');
+}
+
+function trocarSenha() {
+  const userId = parseInt(document.getElementById('senhaUserSelect').value);
+  const nova = document.getElementById('novaSenha').value;
+  const conf = document.getElementById('confirmarSenha').value;
+  if (!nova || nova.length < 4) return toast('Senha deve ter ao menos 4 caracteres.', 'error');
+  if (nova !== conf) return toast('As senhas não coincidem!', 'error');
+  const u = db.usuarios.find(x => x.id === userId);
+  u.senha = nova;
+  save();
+  document.getElementById('novaSenha').value = '';
+  document.getElementById('confirmarSenha').value = '';
+  toast('Senha alterada com sucesso!');
+}
+
+function loadPerfil() {
+  const u = db.usuarios.find(x => x.id === db.currentUser);
+  if (!u) return;
+  document.getElementById('perfilNome').value = u.nome;
+  document.getElementById('perfilEmail').value = u.email;
+  document.getElementById('perfilCargo').value = u.cargo || '';
+}
+
+function salvarPerfil() {
+  const u = db.usuarios.find(x => x.id === db.currentUser);
+  if (!u) return;
+  u.nome = document.getElementById('perfilNome').value.trim() || u.nome;
+  u.email = document.getElementById('perfilEmail').value.trim() || u.email;
+  u.cargo = document.getElementById('perfilCargo').value;
+  save();
+  updateHeaderUser();
+  toast('Perfil atualizado com sucesso!');
+}
+
+function updateHeaderUser() {
+  const u = db.usuarios.find(x => x.id === db.currentUser);
+  if (!u) return;
+  document.getElementById('headerUserName').textContent = u.nome;
+  document.getElementById('headerUserRole').textContent = u.role;
+  const initials = u.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('headerAvatar').textContent = initials;
+}
+
+// ══════════════════════════════════════════════
+// NOTAS FISCAIS
+// ══════════════════════════════════════════════
+
+let editingNFId = null;
+
+function openModalNF(id = null) {
+  editingNFId = id;
+  const today = new Date().toISOString().split('T')[0];
+  if (id) {
+    const n = db.notas.find(x => x.id === id);
+    document.getElementById('modalNFTitle').textContent = 'EDITAR NOTA FISCAL';
+    document.getElementById('nfNumero').value = n.numero;
+    document.getElementById('nfFornecedor').value = n.fornecedor;
+    document.getElementById('nfDataEmissao').value = n.dataEmissao || '';
+    document.getElementById('nfDataRecebimento').value = n.dataRecebimento || '';
+    document.getElementById('nfValor').value = n.valor || '';
+    document.getElementById('nfItens').value = n.itens || '';
+    document.getElementById('nfStatus').value = n.status;
+    document.getElementById('nfObs').value = n.obs || '';
+  } else {
+    document.getElementById('modalNFTitle').textContent = 'REGISTRAR NOTA FISCAL';
+    document.getElementById('nfNumero').value = '';
+    document.getElementById('nfFornecedor').value = '';
+    document.getElementById('nfDataEmissao').value = today;
+    document.getElementById('nfDataRecebimento').value = today;
+    document.getElementById('nfValor').value = '';
+    document.getElementById('nfItens').value = '';
+    document.getElementById('nfStatus').value = 'Recebida';
+    document.getElementById('nfObs').value = '';
+  }
+  openModal('modalNF');
+}
+
+function salvarNF() {
+  const numero = document.getElementById('nfNumero').value.trim();
+  const fornecedor = document.getElementById('nfFornecedor').value.trim();
+  const dataRecebimento = document.getElementById('nfDataRecebimento').value;
+  if (!numero || !fornecedor || !dataRecebimento) return toast('Preencha os campos obrigatórios.', 'error');
+
+  if (editingNFId) {
+    const n = db.notas.find(x => x.id === editingNFId);
+    n.numero = numero; n.fornecedor = fornecedor;
+    n.dataEmissao = document.getElementById('nfDataEmissao').value;
+    n.dataRecebimento = dataRecebimento;
+    n.valor = parseFloat(document.getElementById('nfValor').value) || 0;
+    n.itens = document.getElementById('nfItens').value;
+    n.status = document.getElementById('nfStatus').value;
+    n.obs = document.getElementById('nfObs').value;
+    toast('Nota fiscal atualizada!');
+  } else {
+    db.notas.unshift({
+      id: Date.now(), numero, fornecedor,
+      dataEmissao: document.getElementById('nfDataEmissao').value,
+      dataRecebimento,
+      valor: parseFloat(document.getElementById('nfValor').value) || 0,
+      itens: document.getElementById('nfItens').value,
+      status: document.getElementById('nfStatus').value,
+      obs: document.getElementById('nfObs').value,
+      usuario: currentUserName(),
+      registradoEm: new Date().toISOString()
+    });
+    toast('Nota fiscal registrada com sucesso!');
+  }
+  save(); closeModal('modalNF'); renderNotas();
+}
+
+function renderNotas() {
+  const search = (document.getElementById('searchNF')?.value || '').toLowerCase();
+  const dI = document.getElementById('filterNFInicio')?.value;
+  const dF = document.getElementById('filterNFFim')?.value;
+
+  let list = (db.notas || []).filter(n => {
+    const matchS = !search || n.numero.toLowerCase().includes(search) || n.fornecedor.toLowerCase().includes(search) || (n.itens||'').toLowerCase().includes(search);
+    const matchI = !dI || n.dataRecebimento >= dI;
+    const matchF = !dF || n.dataRecebimento <= dF;
+    return matchS && matchI && matchF;
+  });
+
+  document.getElementById('nfCount').textContent = list.length + ' nota' + (list.length !== 1 ? 's' : '');
+
+  const statusColors = { Recebida: 'badge-in', 'Em Conferência': 'badge-low', Conferida: 'badge-ok', 'Com Divergência': 'badge-critical' };
+
+  const tbody = document.getElementById('tableNotas');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">🧾</div><div class="empty-state-text">Nenhuma nota fiscal registrada</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(n => `<tr>
+    <td class="mono" style="color:var(--accent);font-size:12px">${n.numero}</td>
+    <td style="font-weight:500">${n.fornecedor}</td>
+    <td class="mono" style="font-size:11px;color:var(--text2)">${n.dataEmissao ? new Date(n.dataEmissao + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
+    <td class="mono" style="font-size:11px">${new Date(n.dataRecebimento + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+    <td style="font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.itens || '—'}</td>
+    <td style="font-weight:600;color:var(--green)">${n.valor ? 'R$ ' + n.valor.toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—'}</td>
+    <td style="font-size:12px">${n.usuario}</td>
+    <td><span class="badge ${statusColors[n.status] || 'badge-op'}">${n.status}</span></td>
+    <td style="font-size:11px;color:var(--text2);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.obs || '—'}</td>
+    <td>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="openModalNF(${n.id})">✏️</button>
+        <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="excluirNF(${n.id})">🗑</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function excluirNF(id) {
+  if (!confirm('Excluir esta nota fiscal?')) return;
+  db.notas = db.notas.filter(n => n.id !== id);
+  save(); renderNotas(); toast('Nota removida.', 'warning');
+}
+
+function exportarNotas() {
+  const header = ['Número NF','Fornecedor','Data Emissão','Data Recebimento','Itens','Valor (R$)','Status','Usuário','Obs'];
+  const rows = (db.notas || []).map(n => [n.numero, n.fornecedor, n.dataEmissao, n.dataRecebimento, n.itens, n.valor, n.status, n.usuario, n.obs]);
+  const csv = [header, ...rows].map(r => r.join(';')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `notas_fiscais_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+  a.click(); toast('Notas exportadas!');
+}
+
+// ══════════════════════════════════════════════
+// PEÇAS RECONDICIONADAS
+// ══════════════════════════════════════════════
+
+let editingReconId = null;
+
+function openModalRecon(id = null) {
+  editingReconId = id;
+  const today = new Date().toISOString().split('T')[0];
+  if (id) {
+    const r = db.recondicionadas.find(x => x.id === id);
+    document.getElementById('modalReconTitle').textContent = 'EDITAR PEÇA RECONDICIONADA';
+    document.getElementById('reconNome').value = r.nome;
+    document.getElementById('reconPN').value = r.pn;
+    document.getElementById('reconID').value = r.idPeca;
+    document.getElementById('reconQC').value = r.qc;
+    document.getElementById('reconFornecedor').value = r.fornecedor || '';
+    document.getElementById('reconDataEntrada').value = r.dataEntrada || '';
+    document.getElementById('reconObs').value = r.obs || '';
+  } else {
+    document.getElementById('modalReconTitle').textContent = 'REGISTRAR PEÇA RECONDICIONADA';
+    ['reconNome','reconPN','reconID','reconQC','reconFornecedor','reconObs'].forEach(f => document.getElementById(f).value = '');
+    document.getElementById('reconDataEntrada').value = today;
+  }
+  openModal('modalRecon');
+}
+
+function salvarRecon() {
+  const nome = document.getElementById('reconNome').value.trim();
+  const pn = document.getElementById('reconPN').value.trim();
+  const idPeca = document.getElementById('reconID').value.trim();
+  const qc = document.getElementById('reconQC').value.trim();
+  if (!nome || !pn || !idPeca) return toast('Preencha os campos obrigatórios.', 'error');
+
+  if (editingReconId) {
+    const r = db.recondicionadas.find(x => x.id === editingReconId);
+    r.nome = nome; r.pn = pn; r.idPeca = idPeca; r.qc = qc;
+    r.fornecedor = document.getElementById('reconFornecedor').value;
+    r.dataEntrada = document.getElementById('reconDataEntrada').value;
+    r.obs = document.getElementById('reconObs').value;
+    toast('Peça recondicionada atualizada!');
+  } else {
+    db.recondicionadas.unshift({
+      id: Date.now(), nome, pn, idPeca, qc,
+      fornecedor: document.getElementById('reconFornecedor').value,
+      dataEntrada: document.getElementById('reconDataEntrada').value,
+      obs: document.getElementById('reconObs').value,
+      usuario: currentUserName(),
+      registradoEm: new Date().toISOString()
+    });
+    toast('Peça recondicionada registrada!');
+  }
+  save(); closeModal('modalRecon'); renderRecon();
+}
+
+function renderRecon() {
+  if (!db.recondicionadas) db.recondicionadas = [];
+  const search = (document.getElementById('searchRecon')?.value || '').toLowerCase();
+
+  let list = db.recondicionadas.filter(r => {
+    return !search || r.nome.toLowerCase().includes(search) || r.pn.toLowerCase().includes(search) || r.idPeca.toLowerCase().includes(search) || (r.qc||'').toLowerCase().includes(search) || (r.fornecedor||'').toLowerCase().includes(search);
+  });
+
+  const total = db.recondicionadas.length;
+  const comQC = db.recondicionadas.filter(r => r.qc && r.qc.trim() !== '').length;
+
+  if (document.getElementById('reconTotal')) document.getElementById('reconTotal').textContent = total;
+  if (document.getElementById('reconAprovado')) document.getElementById('reconAprovado').textContent = comQC;
+  if (document.getElementById('reconCount')) document.getElementById('reconCount').textContent = list.length + ' itens';
+
+  const tbody = document.getElementById('tableRecon');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">♻️</div><div class="empty-state-text">Nenhuma peça recondicionada registrada</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(r => `<tr>
+    <td class="mono" style="color:var(--accent2);font-size:12px;font-weight:700">${r.idPeca}</td>
+    <td style="font-weight:600">${r.nome}</td>
+    <td class="mono" style="font-size:12px;color:var(--text2)">${r.pn}</td>
+    <td><span class="badge badge-ok" style="font-family:'IBM Plex Mono',monospace;letter-spacing:1px;">${r.qc ? 'QC: ' + r.qc : '—'}</span></td>
+    <td style="font-size:12px;color:var(--text2)">${r.fornecedor || '—'}</td>
+    <td class="mono" style="font-size:11px">${r.dataEntrada ? new Date(r.dataEntrada + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
+    <td style="font-size:12px">${r.usuario}</td>
+    <td style="font-size:11px;color:var(--text2);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.obs || '—'}</td>
+    <td>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="openModalRecon(${r.id})">✏️</button>
+        <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="excluirRecon(${r.id})">🗑</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function excluirRecon(id) {
+  if (!confirm('Excluir este registro?')) return;
+  db.recondicionadas = db.recondicionadas.filter(r => r.id !== id);
+  save(); renderRecon(); toast('Registro removido.', 'warning');
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+
+function init() {
+  load();
+  if (!db.notas) db.notas = [];
+  if (!db.recondicionadas) db.recondicionadas = [];
+
+  // Preencher datas padrão
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('entradaData').value = today;
+  document.getElementById('saidaData').value = today;
+  document.getElementById('listData').value = today;
+
+  // Preencher usuário responsável
+  const u = db.usuarios.find(x => x.id === db.currentUser);
+  if (u) {
+    document.getElementById('entradaUsuario').value = u.nome;
+    document.getElementById('saidaUsuario').value = u.nome;
+    document.getElementById('listSolicitante').value = u.nome;
+  }
+
+  updateHeaderUser();
+
+  // Carregar dados de demo se vazio
+  if (!db.pecas.length) loadDemoData();
+
+  refreshDashboard();
+}
+
+function loadDemoData() {
+  const demoPecas = [
+    { id: 1001, codigo: 'TK-COMP-001', descricao: 'Compressor Thermo King SLXi', categoria: 'Compressor', unidade: 'UN', fabricante: 'Thermo King', estoque: 3, estoqueMin: 2, localizacao: 'Prateleira A1', obs: 'Modelo SLXi 300/400', criadoEm: new Date().toISOString() },
+    { id: 1002, codigo: 'CR-EVAP-002', descricao: 'Serpentina Evaporadora Carrier', categoria: 'Evaporador', unidade: 'UN', fabricante: 'Carrier', estoque: 1, estoqueMin: 2, localizacao: 'Prateleira B2', obs: '', criadoEm: new Date().toISOString() },
+    { id: 1003, codigo: 'FT-SECD-003', descricao: 'Filtro Secador 083-0001', categoria: 'Filtro/Secador', unidade: 'PC', fabricante: 'Danfoss', estoque: 12, estoqueMin: 5, localizacao: 'Gaveta C3', obs: 'Compatível com R-134a', criadoEm: new Date().toISOString() },
+    { id: 1004, codigo: 'EL-CONT-004', descricao: 'Controlador Eletrônico DataCORDER', categoria: 'Elétrica', unidade: 'UN', fabricante: 'Thermo King', estoque: 0, estoqueMin: 1, localizacao: 'Prateleira D1', obs: '', criadoEm: new Date().toISOString() },
+    { id: 1005, codigo: 'CN-COND-005', descricao: 'Condensador de Alumínio 48"', categoria: 'Condensador', unidade: 'UN', fabricante: 'Carrier', estoque: 4, estoqueMin: 2, localizacao: 'Estante E2', obs: '', criadoEm: new Date().toISOString() },
+    { id: 1006, codigo: 'EL-FUSE-006', descricao: 'Fusível 30A para Painel', categoria: 'Elétrica', unidade: 'CX', fabricante: 'Diversos', estoque: 8, estoqueMin: 3, localizacao: 'Gaveta C1', obs: 'Caixa com 10 unidades', criadoEm: new Date().toISOString() },
+  ];
+  db.pecas = demoPecas;
+
+  const hoje = new Date().toISOString();
+  db.historico = [
+    { id: 2001, tipo: 'ENTRADA', pecaId: 1001, pecaDesc: 'Compressor Thermo King SLXi', pecaCodigo: 'TK-COMP-001', categoria: 'Compressor', qtd: 3, ref: 'NF-2024001 / TK Brasil', usuario: 'Administrador', obs: 'Recebimento mensal', data: hoje },
+    { id: 2002, tipo: 'SAÍDA', pecaId: 1003, pecaDesc: 'Filtro Secador 083-0001', pecaCodigo: 'FT-SECD-003', categoria: 'Filtro/Secador', qtd: 2, ref: 'TCKU7654321 / Manutenção Preventiva', usuario: 'Administrador', obs: '', data: hoje },
+    { id: 2003, tipo: 'SAÍDA', pecaId: 1002, pecaDesc: 'Serpentina Evaporadora Carrier', pecaCodigo: 'CR-EVAP-002', categoria: 'Evaporador', qtd: 1, ref: 'MSCU1234567 / Substituição', usuario: 'Administrador', obs: 'Queima por sobretensão', data: hoje },
+  ];
+
+  save();
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+
+
+// ══════════════════════════════════════════════
+// AUTH / LOGIN SYSTEM
+// ══════════════════════════════════════════════
+
+function showLoginScreen(id) {
+  document.querySelectorAll('#loginOverlay .screen').forEach(s => s.classList.add('hidden'));
+  const el = document.getElementById(id);
+  el.classList.remove('hidden');
+  el.classList.remove('screen');
+  void el.offsetWidth;
+  el.classList.add('screen');
+}
+
+function doLogin() {
+  const usernameInput = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+
+  err.classList.remove('show');
+  if (!usernameInput || !password) {
+    err.textContent = 'Preencha usuário e senha.';
+    err.classList.add('show');
+    return;
+  }
+
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+
+  // Load DB first to get fresh user data
+  load();
+
+  // Find user by name or email match (case-insensitive) and password
+  const found = db.usuarios.find(u =>
+    (u.nome.toLowerCase() === usernameInput.toLowerCase() ||
+     u.email.toLowerCase() === usernameInput.toLowerCase()) &&
+    u.senha === password
+  );
+
+  setTimeout(() => {
+    if (found) {
+      db.currentUser = found.id;
+      save();
+      btn.textContent = '✓ Bem-vindo!';
+      btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+      setTimeout(() => {
+        enterSystem();
+      }, 900);
+    } else {
+      err.textContent = 'Usuário ou senha incorretos.';
+      err.classList.add('show');
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
+      btn.style.background = '';
+    }
+  }, 800);
+}
+
+function doForgot() {
+  const email = document.getElementById('forgotEmail').value;
+  const btn = document.getElementById('forgotBtn');
+  const err = document.getElementById('forgotError');
+  if (!email.includes('@')) { err.classList.add('show'); return; }
+  err.classList.remove('show');
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+  setTimeout(() => {
+    showLoginScreen('successScreen');
+    btn.textContent = 'Enviar Link';
+    btn.disabled = false;
+    document.getElementById('forgotEmail').value = '';
+  }, 1800);
+}
+
+function enterSystem() {
+  const overlay = document.getElementById('loginOverlay');
+  overlay.classList.add('fade-out');
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    // Initialize the stock system now
+    init();
+    addLogoutButton();
+  }, 500);
+}
+
+function addLogoutButton() {
+  const headerRight = document.querySelector('.header-right');
+  if (!headerRight) return;
+  // Avoid duplicates
+  if (document.getElementById('logoutBtn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'logoutBtn';
+  btn.className = 'logout-btn';
+  btn.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(255,61,87,.1);border:1px solid rgba(255,61,87,.25);color:#ff6b7a;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:\'IBM Plex Sans\',sans-serif;transition:all .2s;';
+  btn.innerHTML = '🚪 Sair';
+  btn.onmouseover = () => btn.style.background = 'rgba(255,61,87,.2)';
+  btn.onmouseout = () => btn.style.background = 'rgba(255,61,87,.1)';
+  btn.onclick = doLogout;
+  headerRight.insertBefore(btn, headerRight.firstChild);
+}
+
+function doLogout() {
+  if (!confirm('Deseja sair do sistema?')) return;
+  // Reset login form
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginBtn').textContent = 'Entrar';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').style.background = '';
+  document.getElementById('loginError').classList.remove('show');
+  showLoginScreen('loginScreen');
+  const overlay = document.getElementById('loginOverlay');
+  overlay.style.display = 'flex';
+  overlay.style.opacity = '1';
+  overlay.classList.remove('fade-out');
+}
+
+// Allow pressing Enter to login
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const overlay = document.getElementById('loginOverlay');
+    if (overlay && overlay.style.display !== 'none') {
+      const activeScreen = document.getElementById('loginScreen');
+      if (activeScreen && !activeScreen.classList.contains('hidden')) {
+        doLogin();
+      }
+    }
+  }
+});
+
+
+</script>
+</body>
+</html>
